@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>Kaydedilenler</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <style>
+        /* içerik görünümü */
+        .eh-post{line-height:1.6}
+        .eh-title{margin:0 0 .5rem;font-weight:600;font-size:1.05rem}
+        .eh-block{margin:.5rem 0}
+        .eh-block>strong{display:block;margin-bottom:.25rem}
+        .eh-post ul,.eh-post ol{margin:.25rem 0 .25rem 1.25rem}
+        .eh-post pre{background:#f6f8fa;padding:.5rem .75rem;border-radius:8px;overflow:auto}
+        .eh-footer{margin-top:.5rem;color:#6b7280}
+
+        /* modal animasyonu */
+        .modal-enter{transform:scale(.95);opacity:0}
+        .modal-enter-active{transform:scale(1);opacity:1;transition:.18s ease-out}
+        .modal-leave{transform:scale(1);opacity:1}
+        .modal-leave-active{transform:scale(.95);opacity:0;transition:.15s ease-in}
+    </style>
+</head>
+<body class="bg-gray-100 min-h-screen">
+<div class="max-w-6xl mx-auto py-10 px-3">
+    <div class="flex items-center justify-between mb-6">
+        <h1 class="text-2xl font-bold">Kaydettiğiniz Hatalar</h1>
+        <a href="/home" class="text-blue-600 hover:underline">Ana sayfa</a>
+    </div>
+
+    <!-- flash mesaj -->
+    <div th:if="${msg}" class="mb-4 text-sm text-green-700 bg-green-50 border border-green-200 rounded px-3 py-2" th:text="${msg}"></div>
+
+    <div th:if="${#lists.isEmpty(savedPosts)}" class="text-gray-600">
+        Henüz kaydettiğiniz bir içerik yok.
+    </div>
+
+    <div th:if="${!#lists.isEmpty(savedPosts)}"
+         class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div th:each="sp : ${savedPosts}" class="bg-white p-4 rounded shadow space-y-3">
+            <p class="font-semibold" th:text="${sp.post.title}">Başlık</p>
+            <div class="eh-post text-sm text-gray-700" th:utext="${sp.post.content}"></div>
+
+            <!-- Tekil silme formu -->
+            <form class="form-delete pt-1" th:action="@{'/saved/' + ${sp.id} + '/delete'}" method="post">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                <button type="submit"
+                        class="w-full px-3 py-2 rounded text-white bg-red-600 hover:bg-red-700 text-sm">
+                    Sil
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- GÖRSEL ONAY MODALI -->
+<div id="confirmModal" class="fixed inset-0 z-50 hidden" aria-modal="true" role="dialog" aria-labelledby="cm-title">
+    <div class="absolute inset-0 bg-black/50"></div>
+    <div class="relative mx-auto mt-28 w-[92%] max-w-md">
+        <div id="cm-card" class="modal-enter bg-white rounded-xl shadow-lg p-5">
+            <h3 id="cm-title" class="text-lg font-semibold">Kaydı sil</h3>
+            <p id="cm-text" class="text-sm text-gray-600 mt-1">
+                Bu kaydı silmek istiyor musunuz? İşlem geri alınamaz.
+            </p>
+            <div class="mt-5 flex justify-end gap-2">
+                <button type="button" id="cm-cancel"
+                        class="px-4 py-2 rounded border border-gray-300 text-gray-700 hover:bg-gray-50">
+                    Vazgeç
+                </button>
+                <button type="button" id="cm-ok"
+                        class="px-4 py-2 rounded bg-red-600 text-white hover:bg-red-700">
+                    Evet, sil
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+
+    const modal = document.getElementById('confirmModal');
+    const card  = document.getElementById('cm-card');
+    const btnOk = document.getElementById('cm-ok');
+    const btnCancel = document.getElementById('cm-cancel');
+    let pendingForm = null;
+
+    function openModal(form, titleText){
+        pendingForm = form;
+
+        const titleEl = form.closest('.bg-white').querySelector('.font-semibold');
+        document.getElementById('cm-title').textContent = 'Kaydı sil';
+        document.getElementById('cm-text').textContent =
+            (titleEl ? ('“' + titleEl.textContent + '” kaydını silmek istiyor musunuz?') :
+                'Bu kaydı silmek istiyor musunuz? İşlem geri alınamaz.');
+
+        modal.classList.remove('hidden');
+        card.classList.remove('modal-leave','modal-leave-active');
+        card.classList.add('modal-enter');
+        requestAnimationFrame(()=>{
+            card.classList.add('modal-enter-active');
+        });
+        btnOk.focus();
+    }
+
+    function closeModal(){
+        card.classList.remove('modal-enter','modal-enter-active');
+        card.classList.add('modal-leave');
+        requestAnimationFrame(()=>{
+            card.classList.add('modal-leave-active');
+            setTimeout(()=>{ modal.classList.add('hidden'); }, 140);
+        });
+        pendingForm = null;
+    }
+
+    btnOk.addEventListener('click', ()=>{
+        if (pendingForm) pendingForm.submit();
+        closeModal();
+    });
+    btnCancel.addEventListener('click', closeModal);
+    modal.addEventListener('click', (e)=>{ if(e.target === modal) closeModal(); });
+    window.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeModal(); });
+
+    //confirm() yerine modal
+    document.querySelectorAll('.form-delete').forEach(form => {
+        form.addEventListener('submit', function(e){
+            e.preventDefault();
+            openModal(this);
+        });
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="tr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Paneli</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+
+<header class="bg-white shadow p-4 mb-6">
+    <div class="max-w-7xl mx-auto flex justify-between items-center">
+        <a href="/home" class="text-3xl font-bold text-gray-800">Error Hub</a>
+        <a href="/home"
+           class="text-sm font-medium text-blue-600 hover:underline transition">Anasayfa</a>
+    </div>
+</header>
+
+
+<main class="max-w-7xl mx-auto px-6">
+
+
+    <div class="grid gap-8 md:grid-cols-3">
+
+
+        <section class="bg-white shadow rounded p-6">
+            <h2 class="text-xl font-bold mb-4">Kullanıcılar</h2>
+
+            <input type="text" placeholder="Kullanıcı ara..."
+                   oninput="filterUsers()"
+                   class="w-full px-3 py-2 mb-4 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+                   id="userSearch" />
+
+            <div id="userList" class="space-y-3">
+                <div th:each="u : ${users}"
+                     data-user-row
+                     th:attr="data-username=${u.username},data-email=${u.email}"
+                     class="flex items-start justify-between border-b pb-2">
+
+                    <div>
+                        <p class="text-gray-800 font-medium" th:text="${u.username}">username</p>
+                        <p class="text-gray-600 text-sm" th:text="${u.email} ?: '-'">email</p>
+
+                        <div class="mt-1 flex flex-wrap gap-1" th:if="${u.roles != null}">
+              <span th:each="r : ${u.roles}"
+                    class="text-[11px] bg-gray-100 text-gray-700 px-2 py-0.5 rounded"
+                    th:text="${r}">ROLE</span>
+                        </div>
+                    </div>
+
+                    <div class="flex gap-2">
+                        <form th:action="@{'/admin/users/' + ${u.id} + '/delete'}" method="post" class="inline">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                            <button class="text-xs text-white bg-red-500 px-2 py-1 rounded hover:bg-red-600">Sil</button>
+                        </form>
+
+                        <form th:action="@{'/admin/users/' + ${u.id} + '/make-admin'}" method="post" class="inline">
+                            <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                            <button class="px-3 py-1 rounded text-white bg-emerald-600 hover:bg-emerald-700 text-xs">
+                                Admin Yap
+                            </button>
+                        </form>
+
+
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Post ekleme -->
+        <section class="bg-white shadow rounded p-6">
+            <h2 class="text-xl font-bold mb-4">Postlar</h2>
+
+            <form th:action="@{/admin/add-post}" method="post" class="grid gap-3">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+
+                <input name="title" type="text" placeholder="Başlık"
+                       class="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
+
+                <textarea name="content" placeholder="İçerik"
+                          class="px-3 py-2 border rounded h-28 resize-y focus:outline-none focus:ring-2 focus:ring-blue-500"></textarea>
+
+                <select name="categoryId"
+                        class="px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option th:each="c : ${categories}" th:value="${c.id}" th:text="${c.name}">Kategori</option>
+                </select>
+
+                <button type="submit"
+                        class="bg-indigo-600 text-white px-4 py-2 rounded hover:bg-indigo-700 transition">
+                    Post Ekle
+                </button>
+            </form>
+        </section>
+
+        <!-- Kategoriler -->
+        <section class="bg-white shadow rounded p-6">
+            <h2 class="text-xl font-bold mb-4">Kategoriler</h2>
+
+            <form th:action="@{/admin/add-category}" method="post" class="flex gap-2">
+                <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}" />
+                <input name="name" type="text" placeholder="Yeni kategori adı"
+                       class="flex-1 px-3 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500" />
+                <button type="submit"
+                        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 transition">Ekle</button>
+            </form>
+        </section>
+
+    </div>
+
+    <!-- POSTLAR BAŞLIĞI -->
+    <h2 class="mt-10 mb-6 text-center text-2xl md:text-3xl font-bold tracking-wide text-gray-800">
+        POSTLAR
+    </h2>
+
+    <!-- KATEGORİ + POST LİSTESİ -->
+    <div class="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+
+        <section th:each="category : ${categories}" class="bg-white rounded shadow p-5">
+            <div class="flex items-center justify-between border-b pb-2 mb-3">
+                <h3 class="font-semibold" th:text="${category.name}">Kategori Adı</h3>
+
+                <form th:action="@{'/admin/delete-category/' + ${category.id}}" method="post" class="inline">
+                    <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                    <button class="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600">Sil</button>
+                </form>
+            </div>
+
+            <!-- Bu kategoriye ait postlar -->
+            <ul class="space-y-1">
+                <li th:each="p : ${posts}"
+                    th:if="${p.category != null and p.category.id == category.id}"
+                    class="flex items-center justify-between">
+                    <span class="text-sm text-gray-700" th:text="'• ' + ${p.title}">Post başlığı</span>
+
+                    <form th:action="@{'/admin/posts/' + ${p.id} + '/delete'}" method="post" class="inline">
+                        <input type="hidden" th:name="${_csrf.parameterName}" th:value="${_csrf.token}">
+                        <button class="bg-red-500 text-white text-[11px] px-2 py-0.5 rounded hover:bg-red-600">Sil</button>
+                    </form>
+                </li>
+            </ul>
+        </section>
+
+    </div>
+
+</main>
+
+
+<script>
+    function filterUsers() {
+        const q = (document.getElementById("userSearch").value || "").toLowerCase();
+        document.querySelectorAll("[data-user-row]").forEach(row => {
+            const username = (row.dataset.username || "").toLowerCase();
+            const email    = (row.dataset.email || "").toLowerCase();
+            row.style.display = (q === "" || username.includes(q) || email.includes(q)) ? "" : "none";
+        });
+    }
+</script>
+
+
+</body>
+</html>

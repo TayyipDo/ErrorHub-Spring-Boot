@@ -1,0 +1,37 @@
+# Compiled class files
+/target/
+*.class
+
+# Log files
+*.log
+
+# BlueJ files
+*.ctxt
+
+# Mobile Tools for Java (J2ME)
+.mtj.tmp/
+
+# Package Files #
+*.jar
+*.war
+*.ear
+
+# virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
+hs_err_pid*
+
+# IDE files
+.idea/
+.project
+.classpath
+.settings/
+*.iml
+*.ipr
+*.iws
+
+# Maven
+.mvn/
+
+# Secrets - ÇOK ÖNEMLİ
+# Eğer application.properties içinde veritabanı şifren varsa, onu buraya ekle
+# application.properties
+# VEYA en azından README'de "bunu kendiniz doldurun" de.
